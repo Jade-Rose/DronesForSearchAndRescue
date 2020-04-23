@@ -373,25 +373,12 @@ class TelloUI:
                 if self.target.getLWristCoordinates()[0] != 0 and self.target.getLElbowCoordinates()[0] != 0 and \
                         self.target.getLShoulderCoordinates()[0] != 0 and self.target.getRWristCoordinates()[0] != 0 and \
                         self.target.getRElbowCoordinates()[0] != 0 and self.target.getRShoulderCoordinates()[0] != 0:
-                    self.currentGesture.append(self.target.getLWristCoordinates()) #lwristco
-                    self.currentGesture.append(self.target.getLElbowCoordinates())#lelbow
-                    self.currentGesture.append(self.target.getLShoulderCoordinates())#lshoul
-                    self.currentGesture.append(self.target.getRWristCoordinates())#rwrist
-                    self.currentGesture.append(self.target.getRElbowCoordinates())#relbo
-                    self.currentGesture.append(self.target.getRShoulderCoordinates())#rshoul
-
-                # if self.target.getLWristCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getLWristCoordinates()) #lwristco
-                # if self.target.getLElbowCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getLElbowCoordinates())#lelbow
-                # if self.target.getLShoulderCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getLShoulderCoordinates())#lshoul
-                # if self.target.getRWristCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getRWristCoordinates())#rwrist
-                # if self.target.getRElbowCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getRElbowCoordinates())#relbo
-                # if self.target.getRShoulderCoordinates()[0] != 0:
-                #     self.currentGesture.append(self.target.getRShoulderCoordinates())#rshoul
+                    self.currentGesture.append(self.target.getLWristCoordinates())
+                    self.currentGesture.append(self.target.getLElbowCoordinates())
+                    self.currentGesture.append(self.target.getLShoulderCoordinates())
+                    self.currentGesture.append(self.target.getRWristCoordinates())
+                    self.currentGesture.append(self.target.getRElbowCoordinates())
+                    self.currentGesture.append(self.target.getRShoulderCoordinates())
 
 
             # If recordingFallen is TRUE then the required keypoints must be set and stored in currentFallenGesture
@@ -585,6 +572,7 @@ class TelloUI:
     def Search(self, img, frame):
         # Expanding square formation
         if self.state == self.DroneState.searching:
+            self.frame = self.tello.read()
             # While drone has not completed defined amount of search loops then
             # continue to search while looking for targets
             if self.searchLoops > 0:
@@ -615,10 +603,16 @@ class TelloUI:
                     self.searchLoops -= 1
             else:
                 self.tello.send_command('land')
+                currentTime = time.time()
+                while time.time() - currentTime < 4:
+                    self.frame = self.tello.read()
+                    if self.detection(self.cameraImage, self.frame) == 1:
+                        return 0
 
 
     # Focusing on body
     def FocusBody(self, img, frame):
+        self.frame = self.tello.read()
         self.detection(self.cameraImage, self.frame)
         if self.target.neckCoordinates[0] > 0:
             # If the target's neck X-coordinate is below the center of the frame
@@ -666,11 +660,17 @@ class TelloUI:
     # Approaching
     def Approach(self, img, frame):
         if self.state == self.DroneState.approaching:
+            self.frame = self.tello.read()
             self.detection(self.cameraImage, self.frame)
             # If a face is detected then facial confirmation has been successful
             if len(self.faces) > 0:
                 print("Face Confirmed")
                 self.tello.send_command('land')
+                currentTime = time.time()
+                while time.time() - currentTime < 4:
+                    self.frame = self.tello.read()
+                    if self.detection(self.cameraImage, self.frame) == 1:
+                        return 0
             # If a face has yet to be confirmed and target is still in view then
             # drone should approach target
             else:
